@@ -7,7 +7,7 @@ class Game(val animation: HakemAnimation){
     var deck = Deck()
     var hakem = Direction.BOTTOM
     var direction: Direction = Direction.BOTTOM
-    var hands: MutableList<List<Card>> = mutableListOf()
+    var hands: Array<MutableList<Card>> = Array(4){ mutableListOf<Card>() }
     fun determineHakem(){
         var j = 0
         var card: Card = deck.getTopCard()
@@ -36,14 +36,15 @@ class Game(val animation: HakemAnimation){
         }
     }
 
-    fun dealCards(){
-        var lastIndex = deck.deck.lastIndex+1
+    var lastIndex = deck.deck.lastIndex+1
+    fun dealCards(numCards: Int){
+
         for(i in 0 .. 3){
-            hands.add(deck.deck.subList(lastIndex-5, lastIndex))
-            lastIndex -= 5
+            hands[i].addAll(deck.deck.subList(lastIndex-numCards, lastIndex))
+            lastIndex -= numCards
         }
 
-        animation.fiveCardsDealt(hakem, hands)
+        animation.cardsDealt(numCards, hakem, hands)
     }
 
     private fun getNewDeck(){
@@ -64,5 +65,5 @@ enum class Direction {
 interface HakemAnimation{
      fun oneCardDealtForDeterminingHakem(card: Card, direction: Direction)
     fun hakemDetermined()
-    fun fiveCardsDealt(hakem: Direction, hands: MutableList<List<Card>>)
+    fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>)
 }

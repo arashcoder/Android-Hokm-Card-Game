@@ -9,18 +9,20 @@ import com.hokm.personal.my.hokm.model.*
 import com.hokm.personal.my.hokm.view.CardImageView
 import android.animation.ObjectAnimator
 import android.media.MediaPlayer
-import android.widget.Toast
-import java.time.Duration
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
-    override fun fiveCardsDealt(hakem: Direction, hands: MutableList<List<Card>>) {
+    override fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>) {
+        dealCards(numCards, hakem)
 
+    }
+
+    fun dealCards(numCards: Int, initialDirection: Direction){
         var hakemDealingAnimations = mutableListOf<Animator>()
-        var direction = hakem
+        var direction = initialDirection
 
         for(i in 0 .. 3) {
-            var fiveCards = getNextFiveCards()
+            var cards = getNextCards(numCards)
             var delta = 0f
             var property = ""
 
@@ -51,7 +53,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
             var animator: Animator = ObjectAnimator()
 
-            for(card in fiveCards) {
+            for(card in cards) {
                 animator = ObjectAnimator.ofFloat(card, property, delta)
                 hakemDealingAnimations.add(animator)
             }
@@ -59,7 +61,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             animator.addListener(object : Animator.AnimatorListener {
                 override fun onAnimationRepeat(animation: Animator?) {}
                 override fun onAnimationEnd(animation: Animator?) {
-                    formHand(fiveCards, myDir)
+                    formHand(cards, myDir)
                 }
 
                 override fun onAnimationCancel(animation: Animator?) {}
@@ -71,13 +73,20 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         }
 
         var set = AnimatorSet()
+        set.addListener(object : Animator.AnimatorListener {
+            override fun onAnimationRepeat(animation: Animator?) {}
+            override fun onAnimationEnd(animation: Animator?) {
+                if(lastCardIndexDealt > 0) {
+                    game.dealCards(4)//dealCards(4, initialDirection)
+                }
+            }
+
+            override fun onAnimationCancel(animation: Animator?) {}
+            override fun onAnimationStart(animation: Animator?) {}
+
+        })
         set.playSequentially(hakemDealingAnimations)
         set.start()
-
-    }
-
-    fun dealCards(cards: List<CardImageView>){
-
     }
 
     fun formHand(cards: List<CardImageView>, direction: Direction){
@@ -102,10 +111,10 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     }
 
     var lastCardIndexDealt = 52
-    private fun getNextFiveCards(): List<CardImageView> {
-         var nextFiveCards: MutableList<CardImageView> = allCardsImages.subList(lastCardIndexDealt - 5, lastCardIndexDealt)
+    private fun getNextCards(numCards: Int): List<CardImageView> {
+         var nextFiveCards: MutableList<CardImageView> = allCardsImages.subList(lastCardIndexDealt - numCards, lastCardIndexDealt)
         var sortedCards = sortCards(nextFiveCards)
-        lastCardIndexDealt -= 5
+        lastCardIndexDealt -= numCards
         return sortedCards
     }
 
@@ -198,7 +207,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
             override fun onAnimationEnd(animation: Animator?) {
                 ResetCardsInMiddle()
-                game.dealCards()
+                game.dealCards(5)
 
             }
 
