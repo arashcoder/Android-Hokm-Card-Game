@@ -2,9 +2,9 @@ package com.hokm.personal.my.hokm.model
 
 import android.util.Log
 
-class Game(deck: Deck, val animation: HakemAnimation){
+class Game(val animation: HakemAnimation){
 
-    var deck = deck
+    var deck = Deck()
     var hakem = Direction.BOTTOM
     var direction: Direction = Direction.BOTTOM
     var hands: MutableList<List<Card>> = mutableListOf()
@@ -18,15 +18,16 @@ class Game(deck: Deck, val animation: HakemAnimation){
             j++
             card = deck.getTopCard()
             Log.i("CARD", "card "+ card.value + " " + card.suit + " " + j)
-            direction = getNextDirection()
+            direction = getNextDirection(direction)
             animation.oneCardDealtForDeterminingHakem(card, direction)
         }
         hakem = direction
         animation.hakemDetermined()
+        getNewDeck()
         Log.i("ACE", "card ace"+ card.value + " " + card.suit + " " + j)
     }
 
-    private fun getNextDirection(): Direction{
+     fun getNextDirection(direction: Direction): Direction{
         return when(direction){
             Direction.BOTTOM -> Direction.RIGHT
             Direction.RIGHT -> Direction.TOP
@@ -36,12 +37,17 @@ class Game(deck: Deck, val animation: HakemAnimation){
     }
 
     fun dealCards(){
-        deck = Deck()
-        var lastIndex = deck.deck.lastIndex
+        var lastIndex = deck.deck.lastIndex+1
         for(i in 0 .. 3){
-            hands[i] = deck.deck.subList(lastIndex-5, lastIndex)
+            hands.add(deck.deck.subList(lastIndex-5, lastIndex))
             lastIndex -= 5
         }
+
+        animation.fiveCardsDealt(hakem, hands)
+    }
+
+    private fun getNewDeck(){
+        deck = Deck()
     }
 
 
@@ -58,5 +64,5 @@ enum class Direction {
 interface HakemAnimation{
      fun oneCardDealtForDeterminingHakem(card: Card, direction: Direction)
     fun hakemDetermined()
-    fun fiveCardsDealt(hands: MutableList<List<Card>>)
+    fun fiveCardsDealt(hakem: Direction, hands: MutableList<List<Card>>)
 }

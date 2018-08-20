@@ -9,54 +9,123 @@ import com.hokm.personal.my.hokm.model.*
 import com.hokm.personal.my.hokm.view.CardImageView
 import android.animation.ObjectAnimator
 import android.media.MediaPlayer
+import android.widget.Toast
+import java.time.Duration
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
-    override fun fiveCardsDealt(hands: MutableList<List<Card>>) {
-        var centerY = (resources.displayMetrics.heightPixels / 2).toFloat()
-        centerY -= 100f
-        var set = AnimatorSet()
-        var lastFiveCards = hakemCards.takeLast(numCards)
-        var animations = mutableListOf<Animator>()
-        for(card in lastFiveCards) {
-            var animator = ObjectAnimator.ofFloat(card, "translationY", centerY)
-            animations.add(animator)
+    override fun fiveCardsDealt(hakem: Direction, hands: MutableList<List<Card>>) {
+
+        var hakemDealingAnimations = mutableListOf<Animator>()
+        var direction = hakem
+
+        for(i in 0 .. 3) {
+            var fiveCards = getNextFiveCards()
+            var delta = 0f
+            var property = ""
+
+            val displayMetrics = resources.displayMetrics
+            val height = displayMetrics.heightPixels
+            val width = displayMetrics.widthPixels
+            val centerX = (displayMetrics.widthPixels / 2).toFloat()
+            var centerY = (displayMetrics.heightPixels / 2).toFloat()
+            centerY -= 100f
+            when (direction) {
+                Direction.BOTTOM -> {
+                    delta = centerY
+                    property = "translationY"
+                }
+                Direction.RIGHT -> {
+                    delta = centerX
+                    property = "translationX"
+                }
+                Direction.TOP -> {
+                    delta = -centerY
+                    property = "translationY"
+                }
+                Direction.LEFT -> {
+                    delta = -centerX
+                    property = "translationX"
+                }
+            }
+
+            var animator: Animator = ObjectAnimator()
+
+            for(card in fiveCards) {
+                animator = ObjectAnimator.ofFloat(card, property, delta)
+                hakemDealingAnimations.add(animator)
+            }
+            var myDir = direction //needed, otherwise direction doesn't change
+            animator.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationRepeat(animation: Animator?) {}
+                override fun onAnimationEnd(animation: Animator?) {
+                    formHand(fiveCards, myDir)
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {}
+                override fun onAnimationStart(animation: Animator?) {}
+
+            })
+
+            direction = game.getNextDirection(direction)
         }
-        set.playSequentially(animations)
 
-        set.addListener(object : Animator.AnimatorListener {
-            override fun onAnimationRepeat(animation: Animator?) {
-
-            }
-
-            override fun onAnimationEnd(animation: Animator?) {
-                formHand(lastFiveCards)
-            }
-
-            override fun onAnimationCancel(animation: Animator?) {
-            }
-
-            override fun onAnimationStart(animation: Animator?) {
-            }
-
-        })
+        var set = AnimatorSet()
+        set.playSequentially(hakemDealingAnimations)
         set.start()
 
     }
 
-    val deck = Deck()
+    fun dealCards(cards: List<CardImageView>){
+
+    }
+
+    fun formHand(cards: List<CardImageView>, direction: Direction){
+        val fullWidth = resources.displayMetrics.widthPixels
+        val fullHeight = resources.displayMetrics.heightPixels
+
+
+        if(direction == Direction.BOTTOM) {
+            val width = fullWidth/cards.size
+            for ((i, card) in cards.withIndex()) {
+                card.setImageSource()
+                card.x = (i * width).toFloat()
+
+            }
+        }
+
+        else{
+            for((i, card) in cards.withIndex()){
+                //card.x
+            }
+        }
+    }
+
+    var lastCardIndexDealt = 52
+    private fun getNextFiveCards(): List<CardImageView> {
+         var nextFiveCards: MutableList<CardImageView> = allCardsImages.subList(lastCardIndexDealt - 5, lastCardIndexDealt)
+        var sortedCards = sortCards(nextFiveCards)
+        lastCardIndexDealt -= 5
+        return sortedCards
+    }
+
+    private fun sortCards(cards: List<CardImageView>): List<CardImageView>{
+        return cards.sortedWith(compareBy({ it.card.suit }, {it.card.value}))
+    }
+
     var allCardsImages = mutableListOf<CardImageView>()
-    var hakemCards = mutableListOf<CardImageView>()
-    var animations = mutableListOf<Animator>()
-    var zIndex = 1f
+    //var tempCardsImages = mutableListOf<CardImageView>()
+    //var hakemDealingAnimations = mutableListOf<Animator>()
+    //var zIndex = 1f
     lateinit var soundPlayer: MediaPlayer
-    lateinit var game: Game
+    private var game =  Game(this)
+    private var hakemDetermination = HakemDetermination()
 
 
     override fun oneCardDealtForDeterminingHakem(card: Card, direction: Direction) {
 
-        val card = getTopCard()
-        card.setImageSource()
+        val cardImage = hakemDetermination.getTopCardImage()
+
 
         val displayMetrics = resources.displayMetrics
         val height = displayMetrics.heightPixels
@@ -66,11 +135,12 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         centerY -= 100f
 
 
-        var animator: Animator = ObjectAnimator()
+        var animator: Animator
 
 
         var delta = 0f
         var property = ""
+
         when (direction) {
             Direction.BOTTOM -> {
                 delta = centerY
@@ -90,8 +160,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
         }
 
-        zIndex++
-        animator = ObjectAnimator.ofFloat(card, property, delta)
+        animator = ObjectAnimator.ofFloat(cardImage, property, delta)
         animator.addListener(object : Animator.AnimatorListener {
             override fun onAnimationRepeat(animation: Animator?) {
 
@@ -106,18 +175,22 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
 
             override fun onAnimationStart(animation: Animator?) {
+                cardImage.setImageSource()
                 soundPlayer.start()
             }
 
         })
         animator.duration = 500
-        animations.add(animator)
-        animations.add(ObjectAnimator.ofFloat(card, "translationZ", zIndex).setDuration(10))
+        hakemDetermination.hakemDealingAnimations.add(animator)
+
+        hakemDetermination.cardZIndex++
+        hakemDetermination.hakemDealingAnimations.add(
+                ObjectAnimator.ofFloat(cardImage, "translationZ", hakemDetermination.cardZIndex)
+                        .setDuration(10))
     }
 
     override fun hakemDetermined() {
         var set = AnimatorSet()
-        set.playSequentially(animations)
         set.addListener(object : Animator.AnimatorListener {
             override fun onAnimationRepeat(animation: Animator?) {
 
@@ -126,7 +199,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             override fun onAnimationEnd(animation: Animator?) {
                 ResetCardsInMiddle()
                 game.dealCards()
-                //dealCards(5)
+
             }
 
             override fun onAnimationCancel(animation: Animator?) {
@@ -136,6 +209,8 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
 
         })
+
+        set.playSequentially(hakemDetermination.hakemDealingAnimations)
         set.start()
 
     }
@@ -146,63 +221,50 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
         initMediaPlayer()
 
-        val deck = Deck()
-        init(deck)
+        init(true)
 
-        game = Game(deck, this)
         game.determineHakem()
 
     }
 
-    fun init(deck: Deck){
-
-        for(card: Card in deck.deck){
+    fun init(isHakemDetermination: Boolean = false){
+        for(card: Card in game.deck.deck){
             var img  = CardImageView(card, this)
-
-            img.setLayoutParams()
             root.addView(img)
             allCardsImages.add(img)
-            hakemCards.add(img)
+            if(isHakemDetermination) {
+                hakemDetermination.cardsImages.add(img)
+            }
         }
-    }
-
-    fun getTopCard(): CardImageView{
-        val topCard = hakemCards.last()
-        hakemCards.removeAt(hakemCards.lastIndex)
-        return topCard
     }
 
     fun initMediaPlayer(){
         soundPlayer = MediaPlayer.create(this, R.raw.deal)
     }
 
-    fun ResetCardsInMiddle(){
-        hakemCards.clear()
-        for(image in allCardsImages){
-            root.removeView(image)
-        }
-        allCardsImages.clear()
-
-        for(i in 0 until deck.deck.size){
-            var card = deck.deck[i]
-            var img  = CardImageView(card, this)
-            img.setLayoutParams()
-            root.addView(img)
-            allCardsImages.add(img)
-            hakemCards.add(img)
-        }
+    fun ResetCardsInMiddle() {
+        clearAllCardsImages()
+        init(false)
     }
 
-    fun dealCards(numCards: Int){
+   private fun clearAllCardsImages(){
+       for(image in allCardsImages){
+           root.removeView(image)
+       }
+       allCardsImages.clear()
+   }
 
-    }
 
-    fun formHand(cards: List<CardImageView>){
-        val fullWidth = resources.displayMetrics.widthPixels
-        val width = fullWidth/cards.size
-        for((i, card) in cards.withIndex()){
-            card.setImageSource()
-            card.x = (i * width).toFloat()
+
+    class HakemDetermination(var cardsImages: MutableList<CardImageView> = mutableListOf(),
+                             var hakemDealingAnimations: MutableList<Animator> = mutableListOf(),
+                             var cardZIndex: Float = 1f){
+        fun getTopCardImage(): CardImageView{
+            val topCard = cardsImages.last()
+            cardsImages.removeAt(cardsImages.lastIndex)
+            return topCard
         }
+
     }
+
 }
