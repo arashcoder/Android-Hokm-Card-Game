@@ -12,6 +12,9 @@ import android.media.MediaPlayer
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
+
+    var hands: Array<MutableList<CardImageView>> = Array(4){ mutableListOf<CardImageView>() }
+
     override fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>) {
         dealCards(numCards, hakem)
 
@@ -23,6 +26,9 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
         for(i in 0 .. 3) {
             var cards = getNextCards(numCards)
+            hands[i].addAll(cards)
+            hands[i] = sortCards(hands[i]).toMutableList()
+
             var delta = 0f
             var property = ""
 
@@ -61,7 +67,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             animator.addListener(object : Animator.AnimatorListener {
                 override fun onAnimationRepeat(animation: Animator?) {}
                 override fun onAnimationEnd(animation: Animator?) {
-                    formHand(cards, myDir)
+                    formHand(hands[i], myDir)
                 }
 
                 override fun onAnimationCancel(animation: Animator?) {}
@@ -99,7 +105,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             for ((i, card) in cards.withIndex()) {
                 card.setImageSource()
                 card.x = (i * width).toFloat()
-
+                card.translationZ = i.toFloat()
             }
         }
 
