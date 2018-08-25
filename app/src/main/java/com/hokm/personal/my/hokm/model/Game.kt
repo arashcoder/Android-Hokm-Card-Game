@@ -8,6 +8,8 @@ class Game(val animation: HakemAnimation){
     var hakem = Direction.BOTTOM
     var direction: Direction = Direction.BOTTOM
     var hands: Array<MutableList<Card>> = Array(4){ mutableListOf<Card>() }
+    var players: MutableList<Player> = mutableListOf()
+
     fun determineHakem(){
         var j = 0
         var card: Card = deck.getTopCard()
@@ -39,9 +41,29 @@ class Game(val animation: HakemAnimation){
     var lastIndex = deck.deck.lastIndex+1
     fun dealCards(numCards: Int){
 
+        var dir = hakem
         for(i in 0 .. 3){
-            hands[i].addAll(deck.deck.subList(lastIndex-numCards, lastIndex))
+            hands[dir.value].addAll(deck.deck.subList(lastIndex-numCards, lastIndex))
             lastIndex -= numCards
+            dir = getNextDirection(dir)
+        }
+
+        if(numCards == 5){
+            var humanPlayer = PlayerHuman("Arash", hands[Direction.BOTTOM.value])
+            var rightAI = PlayerAI("right", Direction.RIGHT, hands[Direction.RIGHT.value])
+            var topAI = PlayerAI("top", Direction.TOP, hands[Direction.TOP.value])
+            var leftAI = PlayerAI("left", Direction.LEFT, hands[Direction.LEFT.value])
+
+            players.add(Direction.BOTTOM.value, humanPlayer)
+            players.add(Direction.RIGHT.value, rightAI)
+            players.add(Direction.TOP.value, topAI)
+            players.add(Direction.LEFT.value, leftAI)
+        }
+        else{
+            players[Direction.BOTTOM.value].addHand(hands[Direction.BOTTOM.value])
+            players[Direction.RIGHT.value].addHand(hands[Direction.RIGHT.value])
+            players[Direction.TOP.value].addHand(hands[Direction.TOP.value])
+            players[Direction.LEFT.value].addHand(hands[Direction.LEFT.value])
         }
 
         animation.cardsDealt(numCards, hakem, hands)
@@ -55,11 +77,11 @@ class Game(val animation: HakemAnimation){
 
 }
 
-enum class Direction {
-    BOTTOM,
-    RIGHT,
-    TOP,
-    LEFT,
+enum class Direction(val value: Int) {
+    BOTTOM(0),
+    RIGHT(1),
+    TOP(2),
+    LEFT(3),
 }
 
 interface HakemAnimation{

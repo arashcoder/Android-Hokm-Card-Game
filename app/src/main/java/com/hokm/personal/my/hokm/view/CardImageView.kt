@@ -6,11 +6,13 @@ import android.util.AttributeSet
 import android.widget.RelativeLayout
 import com.hokm.personal.my.hokm.R
 import com.hokm.personal.my.hokm.model.Card
+import com.hokm.personal.my.hokm.model.Direction
 import com.squareup.picasso.Picasso
 
 class CardImageView : AppCompatImageView {
 
     var card: Card
+    var direction: Direction = Direction.TOP
 
     constructor(card: Card, context: Context?) : super(context) {
         this.card = card

@@ -9,6 +9,11 @@ import com.hokm.personal.my.hokm.model.*
 import com.hokm.personal.my.hokm.view.CardImageView
 import android.animation.ObjectAnimator
 import android.media.MediaPlayer
+import android.support.graphics.drawable.AnimationUtilsCompat
+import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationSet
+import android.view.animation.AnimationUtils
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
@@ -25,7 +30,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         var direction = initialDirection
 
         for(i in 0 .. 3) {
-            var cards = getNextCards(numCards)
+            var cards = getNextCards(numCards, direction)
             hands[i].addAll(cards)
             hands[i] = sortCards(hands[i]).toMutableList()
 
@@ -117,8 +122,9 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     }
 
     var lastCardIndexDealt = 52
-    private fun getNextCards(numCards: Int): List<CardImageView> {
+    private fun getNextCards(numCards: Int, direction: Direction): List<CardImageView> {
          var nextFiveCards: MutableList<CardImageView> = allCardsImages.subList(lastCardIndexDealt - numCards, lastCardIndexDealt)
+        nextFiveCards.forEach { it.direction = direction }
         var sortedCards = sortCards(nextFiveCards)
         lastCardIndexDealt -= numCards
         return sortedCards
@@ -176,6 +182,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         }
 
         animator = ObjectAnimator.ofFloat(cardImage, property, delta)
+
         animator.addListener(object : Animator.AnimatorListener {
             override fun onAnimationRepeat(animation: Animator?) {
 
@@ -250,7 +257,53 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             if(isHakemDetermination) {
                 hakemDetermination.cardsImages.add(img)
             }
+            else{
+                img.setOnClickListener {
+                    playCardForwardAnim(it as CardImageView)
+                }
+            }
         }
+    }
+
+    private fun playCardForwardAnim(img: CardImageView){
+        val displayMetrics = resources.displayMetrics
+        val height = displayMetrics.heightPixels
+        val width = displayMetrics.widthPixels
+        val centerX = (displayMetrics.widthPixels / 2).toFloat()
+        var centerY = (displayMetrics.heightPixels / 2).toFloat()
+
+        var animSet = AnimatorSet()
+
+        val halfWidth = img.width / 2
+        val halfHeight = img.height / 2
+        var x = 0f
+        var y = 0f
+        when(img.direction){
+            Direction.BOTTOM -> {
+                x = centerX - halfWidth
+                y = centerY + halfHeight
+            }
+            Direction.RIGHT -> {
+                x = centerX + halfWidth
+                y = centerY
+            }
+            Direction.TOP -> {
+                x = centerX - halfWidth
+                y = centerY - halfHeight
+            }
+            Direction.LEFT -> {
+                x = centerX - halfWidth
+                y = centerY
+            }
+        }
+        val animator = ObjectAnimator.ofFloat(img, "x", x)
+        val animator2 = ObjectAnimator.ofFloat(img, "y", y)
+        animSet.playTogether(animator, animator2)
+        animSet.start()
+
+    //   val anim = AnimationUtils.loadAnimation(this, R.anim.push_up_in)
+     //   anim.fillAfter = true
+//       img.startAnimation(anim)
     }
 
     fun initMediaPlayer(){
@@ -268,6 +321,12 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
        }
        allCardsImages.clear()
    }
+
+    private fun setListenerForCard(card: CardImageView){
+        card.setOnClickListener({
+
+        })
+    }
 
 
 
