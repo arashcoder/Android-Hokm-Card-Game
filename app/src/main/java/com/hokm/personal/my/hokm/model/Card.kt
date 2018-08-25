@@ -52,4 +52,12 @@ class Card(val suit: Suit, val value: Int) {
         return res
 
     }
+
+    override fun equals(obj: Any?): Boolean {
+        if (obj !is Card) {
+            return false
+        }
+        val thatCard = obj as Card?
+        return this.suit == thatCard?.suit && this.value == thatCard.value
+    }
 }

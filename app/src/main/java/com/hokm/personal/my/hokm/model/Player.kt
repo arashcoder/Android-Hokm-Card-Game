@@ -14,6 +14,8 @@ abstract class Player {
         this.hand = hand
     }
 
+
+
      fun addHand(hand: MutableList<Card>) {
          this.hand.addAll(hand)
     }

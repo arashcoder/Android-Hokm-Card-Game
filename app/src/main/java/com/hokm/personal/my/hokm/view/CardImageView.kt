@@ -38,5 +38,7 @@ class CardImageView : AppCompatImageView {
         Picasso.get().load(identifier).into(this)
     }
 
-
+    fun setScoreImageSource(){
+        Picasso.get().load(R.drawable.card_score).into(this)
+    }
 }

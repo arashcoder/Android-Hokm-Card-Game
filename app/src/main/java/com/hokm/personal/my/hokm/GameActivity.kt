@@ -17,6 +17,42 @@ import android.view.animation.AnimationUtils
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
+    override fun tableComplete(winnerDirection: Direction?, winnerScore: Int, table: List<Card>) {
+        //direction is either bottom or right
+        val displayMetrics = resources.displayMetrics
+        val height = displayMetrics.heightPixels
+        val width = displayMetrics.widthPixels
+        val centerX = (displayMetrics.widthPixels / 2).toFloat()
+        var centerY = (displayMetrics.heightPixels / 2).toFloat()
+        var animatorSet = AnimatorSet()
+        table.forEach {
+            var img = findCardImage(it)
+            img.setScoreImageSource()
+
+            var x = 0f
+            var y = 0f
+            when(winnerDirection){
+                Direction.BOTTOM -> {
+                    x = 150f + (winnerScore-1) * 100
+                    y =  (resources.displayMetrics.heightPixels / 2 + 200).toFloat()
+                }
+                Direction.RIGHT -> {
+                    x = (width - 200).toFloat()
+                    y =  (resources.displayMetrics.heightPixels / 2).toFloat() + (winnerScore-1) * 100
+                }
+            }
+            val animator = ObjectAnimator.ofFloat(img, "x", x)
+            val animator2 = ObjectAnimator.ofFloat(img, "y", y)
+
+            animator.duration = 500
+            animatorSet.playTogether(animator, animator2)
+            animatorSet.start()
+        }
+    }
+
+    fun findCardImage(card: Card): CardImageView{
+        return allCardsImages.first { it.card == card  }
+    }
 
     var hands: Array<MutableList<CardImageView>> = Array(4){ mutableListOf<CardImageView>() }
 
@@ -260,6 +296,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             else{
                 img.setOnClickListener {
                     playCardForwardAnim(it as CardImageView)
+                    game.cardPlayed(card, img.direction)
                 }
             }
         }
@@ -300,6 +337,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         val animator2 = ObjectAnimator.ofFloat(img, "y", y)
         animSet.playTogether(animator, animator2)
         animSet.start()
+
 
     //   val anim = AnimationUtils.loadAnimation(this, R.anim.push_up_in)
      //   anim.fillAfter = true
