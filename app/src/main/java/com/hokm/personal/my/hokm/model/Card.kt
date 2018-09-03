@@ -21,6 +21,8 @@ class Card(val suit: Suit, val value: Int) {
         val ACE = 14
     }
 
+    lateinit var player: Player
+
     fun determineImageName(): String{
         var valName = ""
         when(this.value) {

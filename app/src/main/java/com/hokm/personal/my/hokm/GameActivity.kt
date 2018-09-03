@@ -9,45 +9,110 @@ import com.hokm.personal.my.hokm.model.*
 import com.hokm.personal.my.hokm.view.CardImageView
 import android.animation.ObjectAnimator
 import android.media.MediaPlayer
-import android.support.graphics.drawable.AnimationUtilsCompat
-import android.view.View
-import android.view.animation.Animation
-import android.view.animation.AnimationSet
-import android.view.animation.AnimationUtils
+import android.view.ViewGroup
+import android.widget.Toast
+import android.content.DialogInterface
+import android.R.array
+import android.support.v7.app.AlertDialog
+import android.util.Log
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
-    override fun tableComplete(winnerDirection: Direction?, winnerScore: Int, table: List<Card>) {
+
+
+    var cardWidth: Int = 0
+    var cardHeight: Int = 0
+
+    override fun tableComplete(winnerDirection: Direction?, winnerScore: Int, table: List<Card>, isGameOver: Boolean) {
         //direction is either bottom or right
         val displayMetrics = resources.displayMetrics
-        val height = displayMetrics.heightPixels
-        val width = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        val screenWidth = displayMetrics.widthPixels
         val centerX = (displayMetrics.widthPixels / 2).toFloat()
         var centerY = (displayMetrics.heightPixels / 2).toFloat()
+        val offsetX = 150f
+        val marginX = 100f
+        val marginY = 100f
+
         var animatorSet = AnimatorSet()
+
+        var anSet = AnimatorSet()
+        var animList = mutableListOf<Animator>()
         table.forEach {
             var img = findCardImage(it)
-            img.setScoreImageSource()
+
+
 
             var x = 0f
             var y = 0f
             when(winnerDirection){
                 Direction.BOTTOM -> {
-                    x = 150f + (winnerScore-1) * 100
-                    y =  (resources.displayMetrics.heightPixels / 2 + 200).toFloat()
+                    x = offsetX + (winnerScore-1) * marginX
+                    y =  screenHeight - (3*cardHeight.toFloat())
                 }
                 Direction.RIGHT -> {
-                    x = (width - 200).toFloat()
-                    y =  (resources.displayMetrics.heightPixels / 2).toFloat() + (winnerScore-1) * 100
+                    x = screenWidth - (cardWidth.toFloat() + (cardWidth/2))
+                    y =  2 * cardHeight.toFloat() + ((winnerScore-1) * marginY)
                 }
             }
             val animator = ObjectAnimator.ofFloat(img, "x", x)
             val animator2 = ObjectAnimator.ofFloat(img, "y", y)
 
-            animator.duration = 500
-            animatorSet.playTogether(animator, animator2)
-            animatorSet.start()
+            animator.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationRepeat(animation: Animator?) {}
+                override fun onAnimationEnd(animation: Animator?) {
+
+                }
+
+                override fun onAnimationCancel(animation: Animator?) {}
+                override fun onAnimationStart(animation: Animator?) {
+                    if(img.direction == Direction.RIGHT || img.direction == Direction.LEFT){
+                        img.rotation = 0f
+                    }
+                    img.setScoreImageSource()
+                }
+
+            })
+            //animator.startDelay = 2000
+            //animator2.startDelay = 2000
+            animList.add(animator)
+            animList.add(animator2)
+
+//            animatorSet.addListener(object : Animator.AnimatorListener {
+//                override fun onAnimationRepeat(animation: Animator?) {}
+//                override fun onAnimationEnd(animation: Animator?) {
+//                  game.playCard()
+//                }
+//
+//                override fun onAnimationCancel(animation: Animator?) {}
+//                override fun onAnimationStart(animation: Animator?) {}
+//
+//            })
+
+            //animator.duration = 500
+            //animatorSet.playTogether(animator, animator2)
+            //animatorSet.start()
         }
+
+        anSet.addListener(object : Animator.AnimatorListener {
+            override fun onAnimationRepeat(animation: Animator?) {}
+            override fun onAnimationEnd(animation: Animator?) {
+                if(isGameOver){
+                    Toast.makeText(this@GameActivity, "ended", Toast.LENGTH_LONG).show()
+                }
+                else {
+                    game.playCard()
+                }
+            }
+
+            override fun onAnimationCancel(animation: Animator?) {}
+            override fun onAnimationStart(animation: Animator?) {}
+
+        })
+        anSet.duration = 500
+        anSet.startDelay = 1000
+        anSet.playTogether(animList)
+        anSet.start()
     }
 
     fun findCardImage(card: Card): CardImageView{
@@ -56,52 +121,32 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
     var hands: Array<MutableList<CardImageView>> = Array(4){ mutableListOf<CardImageView>() }
 
-    override fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>) {
-        dealCards(numCards, hakem)
-
+    override fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?) {
+        dealCards(numCards, hakem, hands, shouldDetermineHokm, hokm)
     }
 
-    fun dealCards(numCards: Int, initialDirection: Direction){
+    fun dealCards(numCards: Int, initialDirection: Direction, nextCards: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?=null){
         var hakemDealingAnimations = mutableListOf<Animator>()
         var direction = initialDirection
 
         for(i in 0 .. 3) {
-            var cards = getNextCards(numCards, direction)
+            var cards = getNextCards(nextCards[direction.value], numCards, direction)
             hands[i].addAll(cards)
             hands[i] = sortCards(hands[i]).toMutableList()
 
-            var delta = 0f
-            var property = ""
+            val delta = getOffset(cards[0], direction)
+            val property = getProperty(direction)
 
-            val displayMetrics = resources.displayMetrics
-            val height = displayMetrics.heightPixels
-            val width = displayMetrics.widthPixels
-            val centerX = (displayMetrics.widthPixels / 2).toFloat()
-            var centerY = (displayMetrics.heightPixels / 2).toFloat()
-            centerY -= 100f
-            when (direction) {
-                Direction.BOTTOM -> {
-                    delta = centerY
-                    property = "translationY"
-                }
-                Direction.RIGHT -> {
-                    delta = centerX
-                    property = "translationX"
-                }
-                Direction.TOP -> {
-                    delta = -centerY
-                    property = "translationY"
-                }
-                Direction.LEFT -> {
-                    delta = -centerX
-                    property = "translationX"
-                }
-            }
-
+            var rotationAnim = ObjectAnimator()
             var animator: Animator = ObjectAnimator()
+            animator.duration = 100
 
             for(card in cards) {
                 animator = ObjectAnimator.ofFloat(card, property, delta)
+
+//                rotationAnim = ObjectAnimator.ofFloat(card, "rotation", 90f)
+//                rotationAnim.duration = 1
+//                hakemDealingAnimations.add(rotationAnim)
                 hakemDealingAnimations.add(animator)
             }
             var myDir = direction //needed, otherwise direction doesn't change
@@ -112,7 +157,11 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
                 }
 
                 override fun onAnimationCancel(animation: Animator?) {}
-                override fun onAnimationStart(animation: Animator?) {}
+                override fun onAnimationStart(animation: Animator?) {
+//                    if(myDir == Direction.RIGHT || myDir == Direction.LEFT){
+//                        hands[i].forEach { it.rotation = 90f }
+//                    }
+                }
 
             })
 
@@ -123,8 +172,17 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         set.addListener(object : Animator.AnimatorListener {
             override fun onAnimationRepeat(animation: Animator?) {}
             override fun onAnimationEnd(animation: Animator?) {
-                if(lastCardIndexDealt > 0) {
+                if(hokm != null){
+                    hokmTop.setText("Hokm:"+ hokm.toString())
+                }
+                if(shouldDetermineHokm){
+                    showHokmDialog()
+                }
+                else if(lastCardIndexDealt > 0) {
                     game.dealCards(4)//dealCards(4, initialDirection)
+                }
+                else{
+                    game.playCard()
                 }
             }
 
@@ -136,9 +194,10 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         set.start()
     }
 
-    fun formHand(cards: List<CardImageView>, direction: Direction){
+    fun formHand(cards: List<CardImageView>, direction: Direction, doRotation: Boolean = true){
         val fullWidth = resources.displayMetrics.widthPixels
         val fullHeight = resources.displayMetrics.heightPixels
+
 
 
         if(direction == Direction.BOTTOM) {
@@ -152,14 +211,36 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
         else{
             for((i, card) in cards.withIndex()){
-                //card.x
+                card.translationZ = i.toFloat()
+
+                when(direction){
+                    Direction.LEFT -> {
+                        if(doRotation){
+                            card.rotation = 90f
+                        }
+                        card.x = (-cardWidth/2).toFloat()
+                        card.y = (fullHeight / 3) + (i*cardWidth/6).toFloat()
+                    }
+                    Direction.RIGHT -> {
+                        if(doRotation){
+                            card.rotation = 90f
+                        }
+                        card.x = fullWidth - (cardWidth/2).toFloat()
+                        card.y = (fullHeight / 3) + (i*(cardWidth/6)).toFloat()
+                    }
+                    Direction.TOP -> {
+                        card.x = (fullWidth/3) + (i*(cardWidth/6)).toFloat()
+                        card.y = -(cardHeight/2).toFloat()
+                    }
+                }
+
             }
         }
     }
 
     var lastCardIndexDealt = 52
-    private fun getNextCards(numCards: Int, direction: Direction): List<CardImageView> {
-         var nextFiveCards: MutableList<CardImageView> = allCardsImages.subList(lastCardIndexDealt - numCards, lastCardIndexDealt)
+    private fun getNextCards(cards: List<Card>, numCards: Int, direction: Direction): List<CardImageView> {
+         var nextFiveCards: List<CardImageView> = allCardsImages.filter { cards.contains(it.card) } //allCardsImages.subList(lastCardIndexDealt - numCards, lastCardIndexDealt)
         nextFiveCards.forEach { it.direction = direction }
         var sortedCards = sortCards(nextFiveCards)
         lastCardIndexDealt -= numCards
@@ -180,44 +261,13 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
 
     override fun oneCardDealtForDeterminingHakem(card: Card, direction: Direction) {
-
         val cardImage = hakemDetermination.getTopCardImage()
 
 
-        val displayMetrics = resources.displayMetrics
-        val height = displayMetrics.heightPixels
-        val width = displayMetrics.widthPixels
-        val centerX = (displayMetrics.widthPixels / 2).toFloat()
-        var centerY = (displayMetrics.heightPixels / 2).toFloat()
-        centerY -= 100f
+        val delta = getOffset(cardImage, direction)
+        val property = getProperty(direction)
 
-
-        var animator: Animator
-
-
-        var delta = 0f
-        var property = ""
-
-        when (direction) {
-            Direction.BOTTOM -> {
-                delta = centerY
-                property = "translationY"
-            }
-            Direction.RIGHT -> {
-                delta = centerX
-                property = "translationX"
-            }
-            Direction.TOP -> {
-                delta = -centerY
-                property = "translationY"
-            }
-            Direction.LEFT -> {
-                delta = -centerX
-                property = "translationX"
-            }
-        }
-
-        animator = ObjectAnimator.ofFloat(cardImage, property, delta)
+        val animator = ObjectAnimator.ofFloat(cardImage, property, delta)
 
         animator.addListener(object : Animator.AnimatorListener {
             override fun onAnimationRepeat(animation: Animator?) {
@@ -234,17 +284,48 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
             override fun onAnimationStart(animation: Animator?) {
                 cardImage.setImageSource()
-                soundPlayer.start()
+                //soundPlayer.start()
             }
 
         })
-        animator.duration = 500
+        animator.duration = 50
         hakemDetermination.hakemDealingAnimations.add(animator)
 
         hakemDetermination.cardZIndex++
-        hakemDetermination.hakemDealingAnimations.add(
-                ObjectAnimator.ofFloat(cardImage, "translationZ", hakemDetermination.cardZIndex)
-                        .setDuration(10))
+        cardImage.translationZ = hakemDetermination.cardZIndex
+        //hakemDetermination.hakemDealingAnimations.add(
+         //       ObjectAnimator.ofFloat(cardImage, "translationZ", hakemDetermination.cardZIndex)
+         //               .setDuration(10))
+    }
+
+    private fun getOffset(cardImage: CardImageView, direction: Direction): Float{
+        cardImage.measure(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        cardHeight = cardImage.measuredHeight
+        cardWidth = cardImage.measuredWidth
+
+
+        val displayMetrics = resources.displayMetrics
+        val height = displayMetrics.heightPixels
+        val width = displayMetrics.widthPixels
+        val halfScreenWidth = (displayMetrics.widthPixels / 2).toFloat()
+        var halfScreenHeight = (displayMetrics.heightPixels / 2).toFloat()
+        //centerY -= 100f
+        val verticalOffset = halfScreenHeight - cardHeight
+        val horizontalOffset = halfScreenWidth - cardWidth
+
+        return when (direction) {
+            Direction.BOTTOM -> verticalOffset
+            Direction.TOP -> -verticalOffset
+            Direction.RIGHT -> horizontalOffset
+            Direction.LEFT -> -horizontalOffset
+        }
+    }
+
+    private fun getProperty(direction: Direction): String{
+        return when (direction) {
+            Direction.BOTTOM, Direction.TOP -> "translationY"
+            Direction.LEFT, Direction.RIGHT -> "translationX"
+        }
     }
 
     override fun hakemDetermined() {
@@ -278,6 +359,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         setContentView(R.layout.activity_game)
 
         initMediaPlayer()
+        //showHokmDialog()
 
         init(true)
 
@@ -295,14 +377,25 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
             else{
                 img.setOnClickListener {
-                    playCardForwardAnim(it as CardImageView)
-                    game.cardPlayed(card, img.direction)
+                    if(game.isValidCard(card)) {
+                        playCardForwardAnim(it as CardImageView, card)
+                    }
+                    else{
+                        Toast.makeText(GameActivity@this, "not valid", Toast.LENGTH_SHORT).show()
+                    }
+                   // game.cardPlayed(card, img.direction)
                 }
             }
         }
     }
 
-    private fun playCardForwardAnim(img: CardImageView){
+    override fun cardPlayed(card: Card, direction: Direction) {
+        val cardImg = findCardImage(card)
+        playCardForwardAnim(cardImg, card)
+    }
+
+    private fun playCardForwardAnim(img: CardImageView, card:Card){
+        img.setImageSource()
         val displayMetrics = resources.displayMetrics
         val height = displayMetrics.heightPixels
         val width = displayMetrics.widthPixels
@@ -311,30 +404,53 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
         var animSet = AnimatorSet()
 
-        val halfWidth = img.width / 2
-        val halfHeight = img.height / 2
+        //img.measure(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        val cardWidth = img.measuredWidth
+        val cardHeight = img.measuredHeight
+        val halfHeight = cardHeight / 2
+        val halfWidth = cardWidth / 2
+
         var x = 0f
         var y = 0f
         when(img.direction){
             Direction.BOTTOM -> {
                 x = centerX - halfWidth
-                y = centerY + halfHeight
-            }
-            Direction.RIGHT -> {
-                x = centerX + halfWidth
-                y = centerY
+                y = centerY - halfHeight
             }
             Direction.TOP -> {
                 x = centerX - halfWidth
-                y = centerY - halfHeight
+                y = centerY - cardHeight - halfHeight
             }
+            Direction.RIGHT -> {
+                x = centerX
+                y = centerY - cardHeight
+            }
+
             Direction.LEFT -> {
-                x = centerX - halfWidth
-                y = centerY
+                x = centerX - cardWidth
+                y = centerY - cardHeight
             }
         }
         val animator = ObjectAnimator.ofFloat(img, "x", x)
         val animator2 = ObjectAnimator.ofFloat(img, "y", y)
+        animSet.addListener(object : Animator.AnimatorListener {
+            override fun onAnimationRepeat(animation: Animator?) {
+
+            }
+
+            override fun onAnimationEnd(animation: Animator?) {
+                hands[img.direction.value].remove(img)
+                //formHand(hands[img.direction.value], img.direction, false)
+                game.cardPlayed(card, img.direction)
+            }
+
+            override fun onAnimationCancel(animation: Animator?) {
+            }
+
+            override fun onAnimationStart(animation: Animator?) {
+            }
+
+        })
         animSet.playTogether(animator, animator2)
         animSet.start()
 
@@ -366,6 +482,32 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         })
     }
 
+
+    private fun showHokmDialog(){
+        val singleChoiceItems = resources.getStringArray(R.array.dialog_hokm)
+        var itemSelected = 0
+        var hokm = Suit.HEART
+        AlertDialog.Builder(this)
+                .setTitle("Select hokm")
+                .setSingleChoiceItems(singleChoiceItems, itemSelected,
+                        DialogInterface.OnClickListener {
+                            dialogInterface, selectedIndex ->
+                            when(selectedIndex){
+                                0 -> hokm = Suit.HEART
+                                1 -> hokm = Suit.SPADE
+                                2 -> hokm = Suit.DIAMOND
+                                3 -> hokm = Suit.CLUB
+                            }
+
+                        })
+                .setPositiveButton("Ok", DialogInterface.OnClickListener {
+                    dialog, which ->
+                    hokmTop.setText("Hokm: " + hokm.toString())
+                    game.humanSpecifiedHokm(hokm)
+                })
+              //  .setNegativeButton("Cancel", null)
+                .show()
+    }
 
 
     class HakemDetermination(var cardsImages: MutableList<CardImageView> = mutableListOf(),

@@ -8,6 +8,7 @@ class Game(val animation: HakemAnimation){
     var hakem = Direction.BOTTOM
     var hokm = Suit.SPADE
     var direction: Direction = Direction.BOTTOM
+    var tableDir: Direction = Direction.BOTTOM
     var hands: Array<MutableList<Card>> = Array(4){ mutableListOf<Card>() }
     var players: MutableList<Player> = mutableListOf()
     var teams: MutableList<Team> = mutableListOf()
@@ -26,6 +27,7 @@ class Game(val animation: HakemAnimation){
             animation.oneCardDealtForDeterminingHakem(card, direction)
         }
         hakem = direction
+        tableDir = direction
         animation.hakemDetermined()
         getNewDeck()
         Log.i("ACE", "card ace"+ card.value + " " + card.suit + " " + j)
@@ -40,16 +42,39 @@ class Game(val animation: HakemAnimation){
         }
     }
 
+    fun isValidCard(card: Card): Boolean{
+        var isValid = false
+        if(table.size == 0){
+           return true
+        }
+
+        val hasSameSuit = hands[Direction.BOTTOM.value].any { it.suit == table[0].suit }
+        if(!hasSameSuit){
+            return true
+        }
+
+        if(table[0].suit == card.suit){
+            return true
+        }
+        return false
+    }
+
     var lastIndex = deck.deck.lastIndex+1
     fun dealCards(numCards: Int){
 
+        var nextCards: Array<MutableList<Card>> = Array(4){ mutableListOf<Card>() }
+
         var dir = hakem
         for(i in 0 .. 3){
+            nextCards[dir.value].addAll(deck.deck.subList(lastIndex-numCards, lastIndex))
             hands[dir.value].addAll(deck.deck.subList(lastIndex-numCards, lastIndex))
             lastIndex -= numCards
             dir = getNextDirection(dir)
         }
 
+        val isHumanHakem = numCards == 5 && hakem == Direction.BOTTOM
+
+        var hokm : Suit? = null
         if(numCards == 5){
             var humanPlayer = PlayerHuman("Arash", hands[Direction.BOTTOM.value])
             var rightAI = PlayerAI("right", Direction.RIGHT, hands[Direction.RIGHT.value])
@@ -63,29 +88,60 @@ class Game(val animation: HakemAnimation){
 
             teams.add(0, Team(players[Direction.BOTTOM.value], players[Direction.TOP.value]))
             teams.add(1, Team(players[Direction.RIGHT.value], players[Direction.LEFT.value]))
-        }
-        else{
-            players[Direction.BOTTOM.value].addHand(hands[Direction.BOTTOM.value])
-            players[Direction.RIGHT.value].addHand(hands[Direction.RIGHT.value])
-            players[Direction.TOP.value].addHand(hands[Direction.TOP.value])
-            players[Direction.LEFT.value].addHand(hands[Direction.LEFT.value])
+
+            if(!isHumanHakem){
+                hokm = players[hakem.value].determineHokm()
+                this.hokm = hokm
+            }
+
         }
 
-        animation.cardsDealt(numCards, hakem, hands)
+        addPlayerToCard(hands[dir.value], players[dir.value])
+
+
+        animation.cardsDealt(numCards, hakem, nextCards, isHumanHakem, hokm)
+    }
+
+    private fun addPlayerToCard(cards: MutableList<Card>, player: Player) {
+        hands.forEachIndexed { index, hand -> hand.forEach { it.player = players[index] }}
+        cards.forEach { it.player = player }
+    }
+
+    fun playCard(){
+        var direction = tableDir
+        if(direction == Direction.BOTTOM)
+            return
+        animation.cardPlayed(players[direction.value].play(), direction)
     }
 
     private fun getNewDeck(){
         deck = Deck()
     }
 
+    fun humanSpecifiedHokm(hokm: Suit){
+        this.hokm = hokm
+        dealCards(4)
+    }
+
+
+
     fun cardPlayed(card: Card, direction: Direction){
         players[direction.value].hand.remove(card)
         table.add(card)
+        tableDir = getNextDirection(direction)
+
         if(table.size == 4){
             val winnerTeam = determineTableWinner()
-            animation.tableComplete(winnerTeam.playerA?.direction, winnerTeam.score, table)
+            tableDir = winnerTeam.playerA?.direction!!
+            val isGameOver = winnerTeam.score == 7
+            animation.tableComplete(winnerTeam.playerA?.direction, winnerTeam.score, table, isGameOver)
             table.clear()
         }
+        else{
+            playCard()
+        }
+
+
     }
 
     private fun determineTableWinner(): Team {
@@ -108,7 +164,8 @@ class Game(val animation: HakemAnimation){
 
     private fun getWinner(cards: List<Card>): Team{
         val winnerCard = cards.maxBy { it.value }
-        val winnerPlayer = players.first { it.hand.contains(winnerCard) }
+        val winnerPlayer = winnerCard?.player
+        //val winnerPlayer = players.first { it.hand.contains(winnerCard) }
         val winnerTeam = teams.first { it.playerA == winnerPlayer || it.playerB == winnerPlayer }//TODO: check this comparison
         winnerTeam.score++
         return winnerTeam
@@ -127,6 +184,8 @@ enum class Direction(val value: Int) {
 interface HakemAnimation{
      fun oneCardDealtForDeterminingHakem(card: Card, direction: Direction)
     fun hakemDetermined()
-    fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>)
-    fun tableComplete(winnerDirection: Direction?, winnerScore: Int, tableCards: List<Card>)
+    //fun hokmDetermined()
+    fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?=null)
+    fun cardPlayed(card: Card, direction: Direction)
+    fun tableComplete(winnerDirection: Direction?, winnerScore: Int, tableCards: List<Card>, isGameOver: Boolean)
 }
