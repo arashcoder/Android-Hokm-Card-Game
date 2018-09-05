@@ -3,6 +3,7 @@ package com.hokm.personal.my.hokm.model
 abstract class Player {
     val name: String
     val hand: MutableList<Card> = mutableListOf()
+    lateinit var team: Team
 
     internal abstract var direction: Direction
     protected var toLeft: Int = 0
@@ -21,7 +22,10 @@ abstract class Player {
          hand.addAll(newHand)
     }
 
-    abstract fun play(): Card
+    abstract fun play(table: MutableList<Card>,
+                      tableHistory: MutableList<MutableList<Card>>,
+                      teams: MutableList<Team>,
+                      hokm: Suit): Card
     fun determineHokm(): Suit {
         return hand[0].suit
     }

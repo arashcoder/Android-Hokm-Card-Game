@@ -43,6 +43,13 @@
         android:layout_centerHorizontal="true"
         android:text="bottom"/>
 
+    <Button
+        android:id="@+id/btn_new_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        android:text="new game"/>
     <!--<ImageView-->
         <!--android:id="@+id/img_determine_hakem"-->
         <!--android:layout_width="wrap_content"-->
