@@ -17,6 +17,8 @@ import android.support.v7.app.AlertDialog
 import android.transition.Visibility
 import android.util.Log
 import android.view.View
+import com.hokm.personal.my.hokm.util.PrefsHelper
+import com.squareup.picasso.Picasso
 
 
 class GameActivity : AppCompatActivity(), HakemAnimation {
@@ -24,6 +26,8 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
     var cardWidth: Int = 0
     var cardHeight: Int = 0
+    var hands: Array<MutableList<CardImageView>> = Array(4){ mutableListOf<CardImageView>() }
+    var lastCardIndexDealt = 52
 
     override fun tableComplete(winnerDirection: Direction?, winnerScore: Int, table: List<Card>, isGameOver: Boolean) {
         //directionHakemDetermination is either bottom or right
@@ -103,9 +107,11 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
                     Toast.makeText(this@GameActivity, "ended", Toast.LENGTH_LONG).show()
                     btn_new_game.visibility = View.VISIBLE
                     btn_new_game.setOnClickListener{
-                        game = Game(this@GameActivity)
-                        ResetCardsInMiddle(true)
-                        game.determineHakem()
+                        hands.forEach { it.clear() }
+                        lastCardIndexDealt = 52
+                        game.newGame()//game = Game(this@GameActivity)
+                        ResetCardsInMiddle(false)
+                        game.dealCards(5)
                     }
                 }
                 else {
@@ -127,13 +133,14 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         return allCardsImages.first { it.card == card  }
     }
 
-    var hands: Array<MutableList<CardImageView>> = Array(4){ mutableListOf<CardImageView>() }
+
 
     override fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?) {
         dealCards(numCards, hakem, hands, shouldDetermineHokm, hokm)
     }
 
     fun dealCards(numCards: Int, initialDirection: Direction, nextCards: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?=null){
+
         var hakemDealingAnimations = mutableListOf<Animator>()
         var direction = initialDirection
 
@@ -188,7 +195,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             override fun onAnimationRepeat(animation: Animator?) {}
             override fun onAnimationEnd(animation: Animator?) {
                 if(hokm != null){
-                    hokmTop.setText("Hokm:"+ hokm.toString())
+                    setHokmImage(hokm)
                 }
                 if(shouldDetermineHokm){
                     showHokmDialog()
@@ -207,6 +214,20 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         })
         set.playSequentially(hakemDealingAnimations)
         set.start()
+    }
+
+    private fun setHokmImage(hokm: Suit) {
+        var hokmIcon = when(hokm){
+            Suit.CLUB -> "clubs"
+            Suit.DIAMOND -> "diamonds"
+            Suit.HEART -> "hearts"
+            Suit.SPADE -> "spades"
+        }
+
+        val identifier = resources.getIdentifier(hokmIcon,
+                "drawable",
+                "com.hokm.personal.my.hokm")
+        Picasso.get().load(identifier).into(img_hokm)
     }
 
     fun formHand(cards: List<CardImageView>, direction: Direction, doRotation: Boolean = true){
@@ -256,7 +277,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         }
     }
 
-    var lastCardIndexDealt = 52
+
     private fun getNextCards(cards: List<Card>, numCards: Int, direction: Direction): List<CardImageView> {
          var nextFiveCards: List<CardImageView> = allCardsImages.filter { cards.contains(it.card) } //allCardsImages.subList(lastCardIndexDealt - numCards, lastCardIndexDealt)
         nextFiveCards.forEach { it.direction = direction }
@@ -387,6 +408,11 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     }
 
     fun init(isHakemDetermination: Boolean = false){
+        //if(isHakemDetermination){
+            val scores = PrefsHelper.getCurrentScore()
+            human_score.setText("your score: " + scores.first)
+            opponent_score.setText("opponent score: " + scores.second)
+        //}
         for(card: Card in game.deck.deck){
             var img  = CardImageView(card, this)
             root.addView(img)
@@ -523,7 +549,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
                         })
                 .setPositiveButton("Ok", DialogInterface.OnClickListener {
                     dialog, which ->
-                    hokmTop.setText("Hokm: " + hokm.toString())
+                    setHokmImage(hokm)
                     game.humanSpecifiedHokm(hokm)
                 })
               //  .setNegativeButton("Cancel", null)

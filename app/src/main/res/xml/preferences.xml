@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res/eu.lucazanini.custompreference" >
+
+    <PreferenceCategory  >
+        <com.hokm.personal.my.hokm.IconPickerPreference
+            android:key="@string/custom_icon_key"
+            android:layout="@layout/item_preference_background"
+            android:title="@string/icon_label"
+            android:summary="Select an icon" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

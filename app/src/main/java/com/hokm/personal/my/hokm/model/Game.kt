@@ -1,21 +1,33 @@
 package com.hokm.personal.my.hokm.model
 
 import android.util.Log
+import com.hokm.personal.my.hokm.util.PrefsHelper
 
 class Game(val animation: HakemAnimation){
 
 
 
     var deck = Deck()
-    var hakem = Direction.BOTTOM
-    var hokm = Suit.SPADE
+    lateinit var hakem: Direction //= Direction.BOTTOM
+    lateinit var tableDir: Direction //= Direction.BOTTOM
+    lateinit var hokm: Suit //= Suit.SPADE
     var directionHakemDetermination: Direction = Direction.BOTTOM
-    var tableDir: Direction = Direction.BOTTOM
     var hands: Array<MutableList<Card>> = Array(4){ mutableListOf<Card>() }
     var players: MutableList<Player> = mutableListOf()
     var teams: MutableList<Team> = mutableListOf()
     var table: MutableList<Card> = mutableListOf<Card>()
     var tableHistory: MutableList<MutableList<Card>> = mutableListOf()
+    var lastIndex = deck.deck.lastIndex+1
+
+    fun newGame(){
+        this.hands.forEach { it.clear() }
+        this.players.clear()
+        this.teams.clear()
+        this.table.clear()
+        this.tableHistory.clear()
+        lastIndex = deck.deck.lastIndex+1
+        getNewDeck()
+    }
 
     companion object {
         fun getTableWinner(table: MutableList<Card>, hokm: Suit, teams: MutableList<Team>): Player {
@@ -91,7 +103,7 @@ class Game(val animation: HakemAnimation){
         return false
     }
 
-    var lastIndex = deck.deck.lastIndex+1
+
     fun dealCards(numCards: Int){
 
         var nextCards: Array<MutableList<Card>> = Array(4){ mutableListOf<Card>() }
@@ -181,6 +193,13 @@ class Game(val animation: HakemAnimation){
             winnerTeam.score++
             tableDir = winnerPlayer.direction
             val isGameOver = winnerTeam.score == 7
+            if(isGameOver){
+               if(winnerTeam != players[hakem.value].team){
+                   hakem = getNextDirection(hakem)
+                   tableDir = hakem
+               }
+            }
+            PrefsHelper.saveTotalScore(winnerTeam.playerA is PlayerHuman)
             animation.tableComplete(winnerTeam.playerA?.direction, winnerTeam.score, table, isGameOver)
             tableHistory.add(table)
             table.clear()

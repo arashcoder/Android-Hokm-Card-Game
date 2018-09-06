@@ -6,21 +6,41 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+
     <TextView
         android:id="@+id/top"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:text="top"/>
+        android:textColor="#fff"
+        android:text="top player" />
+
+        <ImageView
+            android:id="@+id/img_hokm"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/top"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="30dp"
+            app:srcCompat="@drawable/diamonds"/>
+
     <TextView
-        android:id="@+id/hokmTop"
+        android:id="@+id/human_score"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/top"
-        android:layout_marginTop="60dp"
-        android:layout_centerHorizontal="true"
-        android:text="fgfgf"/>
+        android:layout_marginTop="30dp"
+        android:text="our score"/>
+
+    <TextView
+        android:id="@+id/opponent_score"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="30dp"
+        android:text="opponent score"/>
 
     <TextView
         android:layout_width="wrap_content"
