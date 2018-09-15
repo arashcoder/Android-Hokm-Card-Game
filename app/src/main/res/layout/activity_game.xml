@@ -3,65 +3,91 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/background4"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
 
-    <TextView
-        android:id="@+id/top"
+    <FrameLayout
+        android:id="@+id/top_frame"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
+        android:background="#cc2a2929">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:textColor="#fff"
-        android:text="top player" />
+         />
+    </FrameLayout>
 
+    <FrameLayout
+        android:id="@+id/hokm_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_frame"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:background="#cc2a2929">
         <ImageView
             android:id="@+id/img_hokm"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_below="@id/top"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="30dp"
-            app:srcCompat="@drawable/diamonds"/>
+            app:srcCompat="@drawable/spades1"/>
+    </FrameLayout>
 
+    <FrameLayout
+        android:id="@+id/our_score_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_below="@id/top_frame"
+        android:layout_marginTop="30dp"
+        android:background="#cc2a2929">
     <TextView
         android:id="@+id/human_score"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/top"
-        android:layout_marginTop="30dp"
+        android:textColor="#ffff"
         android:text="our score"/>
+    </FrameLayout>
 
+    <FrameLayout
+        android:id="@+id/opponent_score_frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_frame"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="30dp"
+        android:background="#cc2a2929">
     <TextView
         android:id="@+id/opponent_score"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/top"
-        android:layout_alignParentRight="true"
-        android:layout_marginTop="30dp"
+        android:textColor="#ffff"
         android:text="opponent score"/>
+    </FrameLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
-        android:text="left"/>
+    <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentLeft="true"-->
+        <!--android:layout_centerVertical="true"-->
+        <!--android:text="left"/>-->
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
-        android:text="right"/>
+    <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentRight="true"-->
+        <!--android:layout_centerVertical="true"-->
+        <!--android:text="right"/>-->
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:text="bottom"/>
+    <!--<TextView-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignParentBottom="true"-->
+        <!--android:layout_centerHorizontal="true"-->
+        <!--android:text="bottom"/>-->
 
     <Button
         android:id="@+id/btn_new_game"

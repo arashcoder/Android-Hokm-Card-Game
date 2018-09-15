@@ -12,10 +12,8 @@ import android.media.MediaPlayer
 import android.view.ViewGroup
 import android.widget.Toast
 import android.content.DialogInterface
-import android.R.array
+import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
-import android.transition.Visibility
-import android.util.Log
 import android.view.View
 import com.hokm.personal.my.hokm.util.PrefsHelper
 import com.squareup.picasso.Picasso
@@ -29,7 +27,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     var hands: Array<MutableList<CardImageView>> = Array(4){ mutableListOf<CardImageView>() }
     var lastCardIndexDealt = 52
 
-    override fun tableComplete(winnerDirection: Direction?, winnerScore: Int, table: List<Card>, isGameOver: Boolean) {
+    override fun tableComplete(winnerDirection: Direction?, winnerScore: Int, table: List<Card>, isGameOver: Boolean, setOver: Boolean) {
         //directionHakemDetermination is either bottom or right
         val displayMetrics = resources.displayMetrics
         val screenHeight = displayMetrics.heightPixels
@@ -107,11 +105,18 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
                     Toast.makeText(this@GameActivity, "ended", Toast.LENGTH_LONG).show()
                     btn_new_game.visibility = View.VISIBLE
                     btn_new_game.setOnClickListener{
+                        it.visibility = View.GONE
                         hands.forEach { it.clear() }
                         lastCardIndexDealt = 52
-                        game.newGame()//game = Game(this@GameActivity)
-                        ResetCardsInMiddle(false)
-                        game.dealCards(5)
+                        ResetCardsInMiddle(setOver)
+                        if(setOver){
+                            game = Game(this@GameActivity)
+                            game.determineHakem()
+                        }
+                        else {
+                            game.newGame()
+                            game.dealCards(5)
+                        }
                     }
                 }
                 else {
@@ -139,6 +144,8 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         dealCards(numCards, hakem, hands, shouldDetermineHokm, hokm)
     }
 
+    //private fun setPlayer(cardImageView: List<CardImageView>, )
+
     fun dealCards(numCards: Int, initialDirection: Direction, nextCards: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?=null){
 
         var hakemDealingAnimations = mutableListOf<Animator>()
@@ -163,29 +170,51 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             var animator: Animator = ObjectAnimator()
             animator.duration = 100
 
-            for(card in cards) {
+            for((index, card) in cards.withIndex()) {
                 animator = ObjectAnimator.ofFloat(card, property, delta)
 
+                var myDir = direction //needed, otherwise directionHakemDetermination doesn't change
+                animator.addListener(object : Animator.AnimatorListener {
+                    override fun onAnimationRepeat(animation: Animator?) {}
+                    override fun onAnimationEnd(animation: Animator?) {
+                        if(soundPlayer.isPlaying){
+                            //soundPlayer.pause()
+                            soundPlayer.seekTo(0)
+                        }
+                        if(index == cards.size-1) {
+                            formHand(hands[i],myDir)// myDir)
+                        }
+                    }
+
+                    override fun onAnimationCancel(animation: Animator?) {}
+                    override fun onAnimationStart(animation: Animator?) {
+                        soundPlayer.start()
+                    }
+
+                })
 //                rotationAnim = ObjectAnimator.ofFloat(card, "rotation", 90f)
 //                rotationAnim.duration = 1
 //                hakemDealingAnimations.add(rotationAnim)
                 hakemDealingAnimations.add(animator)
             }
-            var myDir = direction //needed, otherwise directionHakemDetermination doesn't change
-            animator.addListener(object : Animator.AnimatorListener {
-                override fun onAnimationRepeat(animation: Animator?) {}
-                override fun onAnimationEnd(animation: Animator?) {
-                    formHand(hands[i], myDir)
-                }
 
-                override fun onAnimationCancel(animation: Animator?) {}
-                override fun onAnimationStart(animation: Animator?) {
-//                    if(myDir == Direction.RIGHT || myDir == Direction.LEFT){
-//                        hands[i].forEach { it.rotation = 90f }
-//                    }
-                }
 
-            })
+          //  var myDir = direction //needed, otherwise directionHakemDetermination doesn't change
+//            animator.addListener(object : Animator.AnimatorListener {
+//                override fun onAnimationRepeat(animation: Animator?) {}
+//                override fun onAnimationEnd(animation: Animator?) {
+//                    //if(soundPlayer.isPlaying){
+//                    //    soundPlayer.seekTo(0)
+//                    //}
+//                    formHand(hands[i], myDir)
+//                }
+//
+//                override fun onAnimationCancel(animation: Animator?) {}
+//                override fun onAnimationStart(animation: Animator?) {
+//                    //soundPlayer.start()
+//                }
+//
+//            })
 
             direction = game.getNextDirection(direction)
         }
@@ -218,10 +247,10 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
     private fun setHokmImage(hokm: Suit) {
         var hokmIcon = when(hokm){
-            Suit.CLUB -> "clubs"
-            Suit.DIAMOND -> "diamonds"
-            Suit.HEART -> "hearts"
-            Suit.SPADE -> "spades"
+            Suit.CLUB -> "clubs1"
+            Suit.DIAMOND -> "diamonds1"
+            Suit.HEART -> "hearts1"
+            Suit.SPADE -> "spades1"
         }
 
         val identifier = resources.getIdentifier(hokmIcon,
@@ -231,6 +260,15 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     }
 
     fun formHand(cards: List<CardImageView>, direction: Direction, doRotation: Boolean = true){
+//        if(cards.size != 5 && cards.size !=9 && cards.size != 13 ){
+//            return
+//        }
+        if(cardHeight == 0 || cardWidth == 0) {
+            cards[0].measure(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            cardHeight = cards[0].measuredHeight
+            cardWidth = cards[0].measuredWidth
+        }
+
         val fullWidth = resources.displayMetrics.widthPixels
         val fullHeight = resources.displayMetrics.heightPixels
 
@@ -281,6 +319,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     private fun getNextCards(cards: List<Card>, numCards: Int, direction: Direction): List<CardImageView> {
          var nextFiveCards: List<CardImageView> = allCardsImages.filter { cards.contains(it.card) } //allCardsImages.subList(lastCardIndexDealt - numCards, lastCardIndexDealt)
         nextFiveCards.forEach { it.direction = direction }
+        nextFiveCards.forEach { it.card.player = cards[0].player }
         var sortedCards = sortCards(nextFiveCards)
         lastCardIndexDealt -= numCards
         return sortedCards
@@ -308,13 +347,17 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
         val animator = ObjectAnimator.ofFloat(cardImage, property, delta)
 
+        var j = 0
         animator.addListener(object : Animator.AnimatorListener {
             override fun onAnimationRepeat(animation: Animator?) {
 
             }
 
             override fun onAnimationEnd(animation: Animator?) {
-                //soundPlayer.stop()
+                if(soundPlayer.isPlaying) {
+                    soundPlayer.pause()
+                   soundPlayer.seekTo(0)
+                }
             }
 
             override fun onAnimationCancel(animation: Animator?) {
@@ -322,12 +365,13 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
 
             override fun onAnimationStart(animation: Animator?) {
+
+                soundPlayer.start()
                 cardImage.setImageSource()
-                //soundPlayer.start()
             }
 
         })
-        animator.duration = 50
+        animator.duration = 500
         hakemDetermination.hakemDealingAnimations.add(animator)
 
         hakemDetermination.cardZIndex++
@@ -398,6 +442,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         setContentView(R.layout.activity_game)
 
         supportActionBar?.hide()
+        setCardBackgroundIcon()
 
         initMediaPlayer()
 
@@ -486,6 +531,10 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
 
             override fun onAnimationEnd(animation: Animator?) {
+                if(soundPlayer.isPlaying){
+                    soundPlayer.pause()
+                    soundPlayer.seekTo(0)
+                }
                 hands[img.direction.value].remove(img)
                 //formHand(hands[img.directionHakemDetermination.value], img.directionHakemDetermination, false)
                 game.cardPlayed(card, img.direction)
@@ -495,10 +544,12 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
             }
 
             override fun onAnimationStart(animation: Animator?) {
+                soundPlayer.start()
             }
 
         })
         animSet.playTogether(animator, animator2)
+        animSet.duration = 500
         animSet.start()
 
 
@@ -508,7 +559,11 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
     }
 
     fun initMediaPlayer(){
-        soundPlayer = MediaPlayer.create(this, R.raw.deal)
+        soundPlayer = MediaPlayer.create(this, R.raw.cardslide7)
+//        soundPlayer.setOnSeekCompleteListener(MediaPlayer.OnSeekCompleteListener { mp ->
+//            // Start the song 30 seconds in
+//            mp.start()
+//        })
     }
 
     fun ResetCardsInMiddle(isHakemDetermination: Boolean) {
@@ -568,6 +623,13 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
     private fun removeClickListener(cardImage: CardImageView){
         cardImage.setOnClickListener(null)
+    }
+
+    private fun setCardBackgroundIcon(){
+        val identifier = resources.getIdentifier(PrefsHelper.getBackgroundIcon(),
+                "drawable",
+                "com.hokm.personal.my.hokm")
+       root.background = ContextCompat.getDrawable(this, identifier)
     }
 
 

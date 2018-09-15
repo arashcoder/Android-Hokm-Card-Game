@@ -27,7 +27,24 @@ abstract class Player {
                       teams: MutableList<Team>,
                       hokm: Suit): Card
     fun determineHokm(): Suit {
-        return hand[0].suit
+        var groupWithCounts = hand.groupingBy { it.suit }.eachCount()
+       var sortedHandByCount = groupWithCounts.toList().sortedByDescending { (key, value) -> value }
+       // var counts = hand.sortWith(compareBy{it.suit}.thenBy)
+       if(sortedHandByCount[0].second >= 3){
+           return sortedHandByCount[0].first
+       }
+        if(sortedHandByCount[0].second > sortedHandByCount[1].second){
+            return sortedHandByCount[0].first
+        }
+        else{
+             val first= hand.filter { it.suit == sortedHandByCount[0].first }.maxBy { it.value }
+            val second = hand.filter { it.suit == sortedHandByCount[1].first }.maxBy { it.value }
+            return if(first?.value!! > second?.value!!){
+                sortedHandByCount[0].first
+            } else{
+                sortedHandByCount[1].first
+            }
+        }
     }
 
 

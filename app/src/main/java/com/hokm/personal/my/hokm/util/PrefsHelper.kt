@@ -8,6 +8,7 @@ import android.preference.PreferenceManager
 object PrefsHelper {
 
     private const val KEY_BACKGROUND_ICON = "background_icon"
+    private const val KEY_CARD_BACK_ICON = "card_back_icon"
     private const val KEY_TOTAL_SCORE = "totalScore"
     private lateinit var prefs: SharedPreferences
 
@@ -21,6 +22,16 @@ object PrefsHelper {
     fun saveBackgroundIcon(iconName: String) {
         prefs.edit()
                 .putString(KEY_BACKGROUND_ICON, iconName)
+                .apply()
+    }
+
+    fun getCardBackIcon(): String {
+        return prefs.getString(KEY_CARD_BACK_ICON, "card_back_black")
+    }
+
+    fun saveCardBackIcon(iconName: String) {
+        prefs.edit()
+                .putString(KEY_CARD_BACK_ICON, iconName)
                 .apply()
     }
 

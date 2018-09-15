@@ -64,6 +64,7 @@ class IconPickerPreference : ListPreference {
     }
 
      var selectedIconFile = ""
+    var isGameBackground = true
     lateinit var icon: ImageView
     var values = listOf<String>()
 
@@ -74,10 +75,9 @@ class IconPickerPreference : ListPreference {
 
     override fun onBindView(view: View?) {
         super.onBindView(view)
+        isGameBackground = this.key == context.resources.getString(R.string.icon_type_game_background)
         icon = view?.findViewById(R.id.iconSelected) as ImageView
-        selectedIconFile = PrefsHelper.getBackgroundIcon()
-                //preferences?.getString(
-                //context.resources.getString(R.string.custom_icon_key), "background") ?: "background"
+        selectedIconFile = if(isGameBackground) PrefsHelper.getBackgroundIcon() else PrefsHelper.getCardBackIcon()
         updateIcon()
     }
 
@@ -94,7 +94,10 @@ class IconPickerPreference : ListPreference {
         builder?.setPositiveButton(null, null)
         builder?.setTitle("")
 
-        val icons = listOf("background", "background2")
+        val icons = if(isGameBackground)
+            listOf("background", "background2")
+        else
+            listOf("card_back_black", "card_back_blue", "card_back_green", "card_back_purple", "card_back_red")
         val customListPreferenceAdapter = CustomListPreferenceAdapter(
                 context, R.layout.item_game_background, icons)
         builder?.setAdapter(customListPreferenceAdapter, null)
@@ -102,12 +105,7 @@ class IconPickerPreference : ListPreference {
 
     override fun onDialogClosed(positiveResult: Boolean) {
         super.onDialogClosed(positiveResult)
-        PrefsHelper.saveBackgroundIcon(selectedIconFile)
-//        val editor = preferences?.edit()
-//        editor?.putString(
-//                context.resources.getString(R.string.custom_icon_key),
-//                selectedIconFile)
-//        editor?.commit()
+        if(isGameBackground) PrefsHelper.saveBackgroundIcon(selectedIconFile) else PrefsHelper.saveCardBackIcon(selectedIconFile)
         updateIcon()
     }
 

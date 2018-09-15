@@ -4,10 +4,16 @@
 
     <PreferenceCategory  >
         <com.hokm.personal.my.hokm.IconPickerPreference
-            android:key="@string/custom_icon_key"
+        android:key="@string/icon_type_game_background"
+        android:layout="@layout/item_preference_background"
+        android:title="@string/background_icon_label"
+        android:summary="Select a background" />
+
+        <com.hokm.personal.my.hokm.IconPickerPreference
+            android:key="@string/icon_type_card_back"
             android:layout="@layout/item_preference_background"
-            android:title="@string/icon_label"
-            android:summary="Select an icon" />
+            android:title="@string/card_icon_label"
+            android:summary="Select a card back" />
     </PreferenceCategory>
 
 </PreferenceScreen>

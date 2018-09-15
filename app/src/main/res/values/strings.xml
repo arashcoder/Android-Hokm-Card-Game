@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Hokm</string>
     <string name="icon_default">ic_green</string>
-    <string name="custom_icon_key">customIconKey</string>
-    <string name="icon_label">Icon</string>
+    <string name="icon_type_game_background">icon_game_background</string>
+    <string name="icon_type_card_back">icon_card_back</string>
+    <string name="background_icon_label">Background Icon</string>
+    <string name="card_icon_label">Card Icon</string>
 </resources>

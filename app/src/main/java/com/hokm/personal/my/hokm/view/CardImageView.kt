@@ -7,6 +7,7 @@ import android.widget.RelativeLayout
 import com.hokm.personal.my.hokm.R
 import com.hokm.personal.my.hokm.model.Card
 import com.hokm.personal.my.hokm.model.Direction
+import com.hokm.personal.my.hokm.util.PrefsHelper
 import com.squareup.picasso.Picasso
 
 class CardImageView : AppCompatImageView {
@@ -26,7 +27,7 @@ class CardImageView : AppCompatImageView {
                      RelativeLayout.LayoutParams.WRAP_CONTENT)
      params.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE)
      this.layoutParams = params
-     this.setImageResource(R.drawable.card_back)
+     setCardBackIcon()//this.setImageResource(R.drawable.card_back_blue)
  }
 
 
@@ -40,5 +41,12 @@ class CardImageView : AppCompatImageView {
 
     fun setScoreImageSource(){
         Picasso.get().load(R.drawable.card_score).into(this)
+    }
+
+    private fun setCardBackIcon(){
+        val identifier = resources.getIdentifier(PrefsHelper.getCardBackIcon(),
+                "drawable",
+                "com.hokm.personal.my.hokm")
+        Picasso.get().load(identifier).into(this)
     }
 }

@@ -51,6 +51,8 @@ class Game(val animation: HakemAnimation){
         private fun getWinner(cards: List<Card>, teams: MutableList<Team>): Player{
             val winnerCard = cards.maxBy { it.value }
             val winnerPlayer = winnerCard?.player!!
+            Log.e("WINNER ", winnerPlayer.name)
+            //Log.e("CARDS ", cards)
             return winnerPlayer
         }
     }
@@ -159,7 +161,7 @@ class Game(val animation: HakemAnimation){
 
     private fun addPlayerToCard(cards: MutableList<Card>, player: Player) {
         hands.forEachIndexed { index, hand -> hand.forEach { it.player = players[index] }}
-        cards.forEach { it.player = player }
+        //cards.forEach { it.player = player }
     }
 
     fun playCard(){
@@ -189,18 +191,25 @@ class Game(val animation: HakemAnimation){
 
         if(table.size == 4){
             val winnerPlayer = getTableWinner(table, hokm, teams)//determineTableWinner()
-            val winnerTeam = winnerPlayer.team//TODO: check this comparison
+
+            val winnerTeam = winnerPlayer.team
             winnerTeam.score++
             tableDir = winnerPlayer.direction
+            PrefsHelper.saveTotalScore(winnerTeam.playerA is PlayerHuman)
             val isGameOver = winnerTeam.score == 7
+            var wholeSetOver = false
             if(isGameOver){
+                //val scores = PrefsHelper.getCurrentScore()
+                //if(scores.first == 2 || scores.second == 2){
+                //    wholeSetOver = true
+                //}
                if(winnerTeam != players[hakem.value].team){
                    hakem = getNextDirection(hakem)
                    tableDir = hakem
                }
             }
-            PrefsHelper.saveTotalScore(winnerTeam.playerA is PlayerHuman)
-            animation.tableComplete(winnerTeam.playerA?.direction, winnerTeam.score, table, isGameOver)
+
+            animation.tableComplete(winnerTeam.playerA?.direction, winnerTeam.score, table, isGameOver, wholeSetOver)
             tableHistory.add(table)
             table.clear()
         }
@@ -253,5 +262,5 @@ interface HakemAnimation{
     //fun hokmDetermined()
     fun cardsDealt(numCards: Int, hakem: Direction, hands: Array<MutableList<Card>>, shouldDetermineHokm: Boolean, hokm: Suit?=null)
     fun cardPlayed(card: Card, direction: Direction)
-    fun tableComplete(winnerDirection: Direction?, winnerScore: Int, tableCards: List<Card>, isGameOver: Boolean)
+    fun tableComplete(winnerDirection: Direction?, winnerScore: Int, tableCards: List<Card>, isGameOver: Boolean, setOver: Boolean)
 }
