@@ -441,7 +441,7 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
 
-        supportActionBar?.hide()
+
         setCardBackgroundIcon()
 
         initMediaPlayer()
@@ -450,6 +450,12 @@ class GameActivity : AppCompatActivity(), HakemAnimation {
 
         game.determineHakem()
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
+        supportActionBar?.hide()
     }
 
     fun init(isHakemDetermination: Boolean = false){
